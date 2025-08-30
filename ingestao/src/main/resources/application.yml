@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: ingestao
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/contas
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+    show-sql: true
+
+  #Actuator
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health, info, prometheus
+    endpoint:
+      prometheus:
+        enabled: true
+
+# Config AWS SDK / SQS (Localstack)
+aws:
+  region: sa-east-1
+  sqs:
+    endpoint: http://localhost:4566
+    queue-url: http://localhost:4566/000000000000/transacoes-financeiras-processadas
