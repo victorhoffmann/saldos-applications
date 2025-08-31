@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
@@ -40,6 +39,4 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
                              @Param("currency") String currency,
                              @Param("timestamp") long timestamp);
 
-    // USAR NA OUTRA APP
-    Optional<AccountEntity> findByOwner(UUID owner);
 }

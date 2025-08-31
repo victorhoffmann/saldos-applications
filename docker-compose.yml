@@ -89,6 +89,7 @@ services:
       -c max_replication_slots=10 
       -c hot_standby_feedback=on
     volumes:
+      - pg_primary_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   # BANCO DE REPLICA
@@ -99,16 +100,12 @@ services:
     environment:
       PGUSER: replicator
       PGPASSWORD: replicator_password
-    command: |
-      bash -c "
-      until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=postgres_primary --port=5432
-      do
-      echo 'Waiting for primary to connect...'
-      sleep 1s
-      done
-      echo 'Backup done, starting replica...'
-      chmod 0700 /var/lib/postgresql/data
-      postgres
-      "
+    entrypoint: ["/docker-entrypoint-initdb.d/replica-entrypoint.sh"]
     depends_on:
       - postgres_primary
+    volumes:
+      - ./db/replica-entrypoint.sh:/docker-entrypoint-initdb.d/replica-entrypoint.sh
+
+volumes:
+  pg_primary_data:
+  pg_replica_data:

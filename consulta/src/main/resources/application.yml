@@ -15,14 +15,19 @@ spring:
         format_sql: true
         jdbc:
           batch_size: 50
-    show-sql: true
+    show-sql: false
 
-  #Actuator
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health, info, prometheus
-    endpoint:
+#Actuator
+management:
+  server:
+    port: 8080
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    export:
+      metrics:
+        enabled: true
       prometheus:
         enabled: true
