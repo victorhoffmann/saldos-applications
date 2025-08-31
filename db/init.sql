@@ -14,10 +14,13 @@ CREATE TABLE transactions (
     amount NUMERIC(15,2) NOT NULL,
     currency CHAR(3) NOT NULL,
     status VARCHAR(12) NOT NULL,
-    timestamp_original BIGINT NOT NULL,              
+    timestamp_original BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(account_id, id)                     
+    UNIQUE(account_id, id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_tx_account_ts
-ON transactions(account_id, ts_original);
+ON transactions(account_id, timestamp_original);
+
+create user replicator with replication encrypted password 'replicator_password';
+select pg_create_physical_replication_slot('replication_slot');

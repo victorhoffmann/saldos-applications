@@ -1,3 +1,14 @@
+x-postgres-common:
+  &postgres-common
+  image: postgres:15
+  user: postgres
+  restart: always
+  healthcheck:
+    test: 'pg_isready -U postgres --dbname=contas'
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
 services:
 
   #FILA SQS
@@ -60,30 +71,44 @@ services:
     working_dir: /home
 
   # BANCO PRIMARIO
-  postgres:
-    image: postgres:15
-    container_name: pg-primary
+  postgres_primary:
+    <<: *postgres-common
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: contas
-    ports:
-      - "5432:5432"
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: |
+      postgres 
+      -c wal_level=replica 
+      -c hot_standby=on 
+      -c max_wal_senders=10 
+      -c max_replication_slots=10 
+      -c hot_standby_feedback=on
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./db:/docker-entrypoint-initdb.d:ro
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  # BANCO REPLICA
-  postgres_read:
-    image: postgres:15
-    container_name: pg-read
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: contas
+  # BANCO DE REPLICA
+  postgres_replica:
+    <<: *postgres-common
     ports:
-      - "5433:5432"
-    command: postgres -c hot_standby=on
-
-volumes:
-  pgdata:
+      - 5433:5432
+    environment:
+      PGUSER: replicator
+      PGPASSWORD: replicator_password
+    command: |
+      bash -c "
+      until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=postgres_primary --port=5432
+      do
+      echo 'Waiting for primary to connect...'
+      sleep 1s
+      done
+      echo 'Backup done, starting replica...'
+      chmod 0700 /var/lib/postgresql/data
+      postgres
+      "
+    depends_on:
+      - postgres_primary

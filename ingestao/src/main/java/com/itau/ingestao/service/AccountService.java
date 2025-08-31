@@ -16,7 +16,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final MetricsService metricsService;
 
-    public void createAccountIfNotExists (TransactionEventDTO eventDTO) {
+    public void createAccountIfNotExists(TransactionEventDTO eventDTO) {
         var result = accountRepository.insertIfAccountNotExists(
                 UUID.fromString(eventDTO.getAccount().getId()),
                 UUID.fromString(eventDTO.getAccount().getOwner()),
@@ -25,8 +25,8 @@ public class AccountService {
                 0L
         );
 
-        if(result != null && result == 1) {
-            log.info("Conta criada com sucesso: {}", eventDTO.getAccount().getId());
+        if (result != null) {
+            log.info("Conta criada com sucesso: {}", result);
             metricsService.incrementAccountCreated();
         }
     }
@@ -39,13 +39,12 @@ public class AccountService {
                 event.getTransaction().getTimestamp()
         );
 
-        if(result == 1) {
+        if (result == 1) {
             log.info("Saldo do cliente atualizado: {}, transação: {}", event.getAccount().getOwner(), event.getTransaction().getId());
             metricsService.incrementAccountBalanceUpdate();
         } else {
             log.info("Evento antigo saldo do cliente não foi atualizado: {}, transação: {}", event.getAccount().getOwner(), event.getTransaction().getId());
             metricsService.incrementAccountBalanceNotUpdate();
         }
-
     }
 }

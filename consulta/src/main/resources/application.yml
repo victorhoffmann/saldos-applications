@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: consulta
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/contas
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+    show-sql: true
+
+  #Actuator
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health, info, prometheus
+    endpoint:
+      prometheus:
+        enabled: true

@@ -1,7 +1,9 @@
 package com.itau.ingestao.repository;
 
 import com.itau.ingestao.entity.AccountEntity;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,19 +12,17 @@ import java.util.UUID;
 
 public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
 
-    @Modifying
-    @Transactional
     @Query(value = """
             INSERT INTO accounts (id, owner, balance_amount, balance_currency, last_transaction_timestamp)
             VALUES (:id, :owner, :balanceAmount, :balanceCurrency, :lastTransactionTimestamp)
             ON CONFLICT (id) DO NOTHING
-            RETURNING 1
+            RETURNING id
         """, nativeQuery = true)
-    Integer insertIfAccountNotExists(@Param("id") UUID id,
-                          @Param("owner") UUID owner,
-                          @Param("balanceAmount") double balanceAmount,
-                          @Param("balanceCurrency") String balanceCurrency,
-                          @Param("lastTransactionTimestamp") long lastTransactionTimestamp);
+    UUID insertIfAccountNotExists(@Param("id") UUID id,
+                                  @Param("owner") UUID owner,
+                                  @Param("balanceAmount") double balanceAmount,
+                                  @Param("balanceCurrency") String balanceCurrency,
+                                  @Param("lastTransactionTimestamp") long lastTransactionTimestamp);
 
     @Modifying
     @Transactional

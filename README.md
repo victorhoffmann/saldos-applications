@@ -3,6 +3,15 @@
 ## Banco de dados
 
 Optei pelo postgres, pensando na leitura e escrita separada, pesquisei que ele trabalha muito bem nesse cenário
+Tentei realizar a replicação mas não consegui fazer funcionar a replicação via docker, então irei utilizar nesse desafio apenas um para escrita/leitura por conta dessa limitação que acabei esbarrando
+
+docker exec -it saldos-applications-postgres_primary-1 psql -U postgres -d contas
+docker exec -it saldos-applications-postgres_replica-1 psql -U postgres -d contas
+
+docker exec -it saldos-applications-postgres_replica-1 psql -U postgres -d contas -c "\watch 2 SELECT id, owner, balance_amount, balance_currency, created_at FROM accounts ORDER BY created_at DESC LIMIT 5;"
+
+
+Consegui ativar a replicação (repo que me salvou: https://github.com/eremeykin/pg-primary-replica)
 
 ## Ingestão
 
