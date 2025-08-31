@@ -1,3 +1,6 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: ingestao
@@ -20,7 +23,7 @@ spring:
 #Actuator
 management:
   server:
-    port: 8080
+    port: 8081
   endpoints:
     web:
       exposure:
