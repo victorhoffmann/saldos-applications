@@ -6,13 +6,16 @@ spring:
     name: consulta
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/contas
-    username: postgres
-    password: postgres
+    #url: jdbc:postgresql://localhost:5433/contas //PASSAR A VARIAVEL PARA O COMPOSE
+    #username: postgres //PASSAR A VARIAVEL PARA O COMPOSE
+    #password: postgres //PASSAR A VARIAVEL PARA O COMPOSE 
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
@@ -33,3 +36,43 @@ management:
         enabled: true
       prometheus:
         enabled: true
+  health:
+    db:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework: WARN
+
+resilience4j:
+  retry:
+    instances:
+      accountServiceRetry:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.springframework.dao.DataAcessException
+          - java.net.ConnectException
+      transactionServiceRetry:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.springframework.dao.DataAcessException
+          - java.net.ConnectException
+  circuitbreaker:
+    instances:
+      accountServiceCircuitBreaker:
+        sliding-window-size: 50
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5000ms
+        permitted-number-of-calls-in-half-open-state: 6
+        minimum-number-of-calls: 25
+        automatic-transition-from-open-to-half-open-enabled: true
+      transactionServiceCircuitBreaker:
+        sliding-window-size: 50
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5000ms
+        permitted-number-of-calls-in-half-open-state: 6
+        minimum-number-of-calls: 25
+        automatic-transition-from-open-to-half-open-enabled: true

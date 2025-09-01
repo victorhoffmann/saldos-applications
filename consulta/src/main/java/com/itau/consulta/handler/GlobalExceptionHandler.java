@@ -1,7 +1,9 @@
 package com.itau.consulta.handler;
 
 import com.itau.consulta.exceptions.AccountNotFoundException;
+import com.itau.consulta.exceptions.AccountSystemUnavailableException;
 import com.itau.consulta.exceptions.TransactionNotFoundException;
+import com.itau.consulta.exceptions.TransactionSystemUnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +42,19 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(AccountSystemUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleAccountSystemUnavailabl(AccountSystemUnavailableException exception,
+                                                               HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(
+                        "Indisponibilidade sistemica ao consultar saldo da conta",
+                        nowSaoPaulo(),
+                        request.getRequestURI()
+                ));
+    }
+
     @ExceptionHandler(TransactionNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleTransactionNotFound(TransactionNotFoundException exception,
                                                                HttpServletRequest request) {
@@ -48,6 +63,19 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(
                         "Transação não encontrada",
+                        nowSaoPaulo(),
+                        request.getRequestURI()
+                ));
+    }
+
+    @ExceptionHandler(TransactionSystemUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionSystemUnavailabl(TransactionSystemUnavailableException exception,
+                                                                       HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(
+                        "Indisponibilidade sistemica ao consultar transação da conta",
                         nowSaoPaulo(),
                         request.getRequestURI()
                 ));
