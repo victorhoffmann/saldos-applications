@@ -94,6 +94,16 @@ public class GlobalExceptionHandler {
                     ));
         }
 
+        if (exception.getRequiredType() == Boolean.class) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(
+                            "Parâmetro 'last_transaction' deve ser true ou false",
+                            nowSaoPaulo(),
+                            request.getRequestURI()
+                    ));
+        }
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(
