@@ -5,7 +5,6 @@ import com.itau.consulta.dto.BalanceDTO;
 import com.itau.consulta.exceptions.AccountNotFoundException;
 import com.itau.consulta.exceptions.AccountSystemUnavailableException;
 import com.itau.consulta.repository.AccountRepository;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,8 +22,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final MetricsService metricsService;
 
-    @Retry(name = "accountServiceRetry")
-    @CircuitBreaker(name = "accountServiceCircuitBreaker", fallbackMethod = "fallbackGetAccount")
+    @Retry(name = "accountServiceRetry", fallbackMethod = "fallbackGetAccount")
     public AccountResponseDTO getAccount(UUID accountId) {
         log.info("Consultando saldo da conta: {}", accountId);
         return accountRepository.findById(accountId)
@@ -51,6 +49,9 @@ public class AccountService {
     }
 
     public AccountResponseDTO fallbackGetAccount(UUID accountId, Exception exception) {
+        if (exception instanceof AccountNotFoundException) {
+            throw (AccountNotFoundException) exception;
+        }
         metricsService.incrementAccountConsultSystemUnavailable();
         throw new AccountSystemUnavailableException();
     }

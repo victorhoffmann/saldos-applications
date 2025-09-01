@@ -8,7 +8,7 @@ spring:
   datasource:
     #url: jdbc:postgresql://localhost:5433/contas //PASSAR A VARIAVEL PARA O COMPOSE
     #username: postgres //PASSAR A VARIAVEL PARA O COMPOSE
-    #password: postgres //PASSAR A VARIAVEL PARA O COMPOSE 
+    #password: postgres //PASSAR A VARIAVEL PARA O COMPOSE
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -47,32 +47,23 @@ logging:
 
 resilience4j:
   retry:
+    configs:
+      default:
+        maxAttempts: 4
+        waitDuration: 500ms
+        intervalFunction:
+          type: exponential
+          multiplier: 2
+          randomizationFactor: 0.5
+        retryExceptions:
+          - org.springframework.dao.DataAccessException
+          - java.net.ConnectException
     instances:
       accountServiceRetry:
-        max-attempts: 3
-        wait-duration: 500ms
-        retry-exceptions:
-          - org.springframework.dao.DataAcessException
-          - java.net.ConnectException
+        baseConfig: default
+        ignoreExceptions:
+          - com.itau.consulta.exceptions.AccountNotFoundException
       transactionServiceRetry:
-        max-attempts: 3
-        wait-duration: 500ms
-        retry-exceptions:
-          - org.springframework.dao.DataAcessException
-          - java.net.ConnectException
-  circuitbreaker:
-    instances:
-      accountServiceCircuitBreaker:
-        sliding-window-size: 50
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 5000ms
-        permitted-number-of-calls-in-half-open-state: 6
-        minimum-number-of-calls: 25
-        automatic-transition-from-open-to-half-open-enabled: true
-      transactionServiceCircuitBreaker:
-        sliding-window-size: 50
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 5000ms
-        permitted-number-of-calls-in-half-open-state: 6
-        minimum-number-of-calls: 25
-        automatic-transition-from-open-to-half-open-enabled: true
+        baseConfig: default
+        ignoreExceptions:
+          - com.itau.consulta.exceptions.TransactionNotFoundException
