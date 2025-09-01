@@ -1,5 +1,6 @@
 package com.itau.consulta.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.itau.consulta.entity.TransactionEntity;
 
 import java.math.BigDecimal;
@@ -9,13 +10,13 @@ import java.util.UUID;
 
 public record TransactionResponseDTO(
         UUID id,
-        UUID accountId,
+        @JsonProperty("account_id") UUID accountId,
         String type,
         BigDecimal amount,
         String currency,
         String status,
-        Long timestampOriginal,
-        OffsetDateTime createdAt
+        @JsonProperty("timestamp") Long timestampOriginal,
+        @JsonProperty("created_at") OffsetDateTime createdAt
 ) {
     public static TransactionResponseDTO toTransactionResponseDTO(TransactionEntity entity) {
         OffsetDateTime createdAt = entity.getCreatedAt()
