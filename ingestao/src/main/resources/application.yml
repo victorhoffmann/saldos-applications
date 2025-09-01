@@ -29,8 +29,6 @@ spring:
     show-sql: false
 
 management:
-  server:
-    port: 8081
   endpoints:
     web:
       exposure:
@@ -41,6 +39,9 @@ management:
         enabled: true
       prometheus:
         enabled: true
+  health:
+    db:
+      enabled: true
 
 resilience4j:
   retry:
