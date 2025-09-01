@@ -4,24 +4,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sqs.SqsClient;
-
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import java.net.URI;
 
 @Configuration
 public class SqsConfig {
 
     @Value("${aws.sqs.endpoint}")
-    private String endpointQueue;
+    private String endpoint;
 
     @Bean
-    public SqsClient sqsClient() {
-        return SqsClient.builder()
+    public SqsAsyncClient sqsAsyncClient() {
+        return SqsAsyncClient.builder()
+                .endpointOverride(URI.create(endpoint))
                 .region(Region.SA_EAST_1)
-                .endpointOverride(URI.create(endpointQueue))
-                .credentialsProvider(() -> AwsBasicCredentials.create("test", "test"))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create("test", "test")
+                ))
                 .build();
     }
-
 }

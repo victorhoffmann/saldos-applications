@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8082
 
 spring:
   application:
@@ -65,8 +65,13 @@ resilience4j:
 # Config AWS SDK / SQS (Localstack)
 aws:
   region: sa-east-1
+  credentials:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
   sqs:
     endpoint: ${SQS_ENDPOINT}
-    queue-url: ${SQS_QUEUE_URL}
-    max-messages: ${SQS_MAX_MESSAGES}
-    wait-time: ${SQS_WAIT_TIME_SECONDS}
+    queue-name: ${QUEUE_NAME}
+    listener:
+      concurrency: 10
+      max-number-of-messages: 10
+      wait-time-seconds: 30

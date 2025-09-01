@@ -47,8 +47,7 @@ services:
       - LOCALSTACK_ENDPOINT=http://localstack:4566
 
       # Generator settings
-      - TOTAL_TRANSACTIONS=3000
-      #- TOTAL_TRANSACTIONS=300000
+      - TOTAL_TRANSACTIONS=300000
       - TOTAL_ACCOUNTS=10000
       - MIN_TRANSACTION_AMOUNT=0
       - MAX_TRANSACTION_AMOUNT=100
@@ -126,12 +125,14 @@ services:
       DB_URL: jdbc:postgresql://postgres_primary:5432/contas
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
+      AWS_ACCESS_KEY: test
+      AWS_SECRET_KEY: test
       SQS_ENDPOINT: http://localstack:4566
-      SQS_QUEUE_URL: http://localstack:4566/000000000000/transacoes-financeiras-processadas
+      QUEUE_NAME: transacoes-financeiras-processadas
       SQS_MAX_MESSAGES: 10
       SQS_WAIT_TIME_SECONDS: 30
     ports:
-      - "8081:8081"
+      - "8082:8082"
     restart: always
 
   # CONSULTA APP
