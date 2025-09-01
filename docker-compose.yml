@@ -130,7 +130,7 @@ services:
       SQS_MAX_MESSAGES: 10
       SQS_WAIT_TIME_SECONDS: 30
     ports:
-      - "8080:8080"
+      - "8081:8081"
     restart: always
 
   # CONSULTA APP
