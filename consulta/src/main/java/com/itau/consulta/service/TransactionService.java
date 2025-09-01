@@ -19,6 +19,7 @@ import static java.util.Objects.isNull;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
+    private final MetricsService metricsService;
 
     public List<TransactionResponseDTO> getTransactions(UUID accountId, boolean lastTransaction) {
         if(lastTransaction) return getLastTransaction(accountId);
@@ -28,14 +29,24 @@ public class TransactionService {
     private List<TransactionResponseDTO> getAllTransactions(UUID accountId) {
         log.info("Consultando transações da conta: {}", accountId);
         List<TransactionEntity> entities = transactionRepository.findAllByAccountId(accountId);
-        if(isNull(entities) || entities.isEmpty()) throw new TransactionNotFoundException();
+        if(isNull(entities) || entities.isEmpty()) {
+            metricsService.incrementAllTransactionsConsultNotFound();
+            throw new TransactionNotFoundException();
+        }
+
+        metricsService.incrementAllTransactionsConsultSucess();
         return toListTransactionResponseDTO(entities);
     }
 
     private List<TransactionResponseDTO> getLastTransaction(UUID accountId) {
         log.info("Consultando ultima transação da conta: {}", accountId);
         TransactionEntity entity = transactionRepository.findTopByAccountIdOrderByCreatedAtDesc(accountId);
-        if(isNull(entity)) throw new TransactionNotFoundException();
+        if(isNull(entity)) {
+            metricsService.incrementLastTransactionConsultNotFound();
+            throw new TransactionNotFoundException();
+        }
+
+        metricsService.incrementLastTransactionConsultSucess();
         return toListTransactionResponseDTO(List.of(entity));
     }
 

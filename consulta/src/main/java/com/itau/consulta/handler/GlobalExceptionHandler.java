@@ -1,6 +1,7 @@
 package com.itau.consulta.handler;
 
 import com.itau.consulta.exceptions.AccountNotFoundException;
+import com.itau.consulta.exceptions.TransactionNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,10 +40,23 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(TransactionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionNotFound(TransactionNotFoundException exception,
+                                                               HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(
+                        "Transação não encontrada",
+                        nowSaoPaulo(),
+                        request.getRequestURI()
+                ));
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidUUID(MethodArgumentTypeMismatchException ex,
+    public ResponseEntity<ErrorResponse> handleInvalidUUID(MethodArgumentTypeMismatchException exception,
                                                            HttpServletRequest request) {
-        if (ex.getRequiredType() != null && ex.getRequiredType().equals(UUID.class)) {
+        if (exception.getRequiredType() == UUID.class) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(
@@ -55,7 +69,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(
-                        ex.getMessage(),
+                        "Erro de tipo inesperado ao processar a requisição",
+                        nowSaoPaulo(),
+                        request.getRequestURI()
+                ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleExceptionGeneric(Exception exception,
+                                                                HttpServletRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(
+                        "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde",
                         nowSaoPaulo(),
                         request.getRequestURI()
                 ));

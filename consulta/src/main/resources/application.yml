@@ -20,7 +20,6 @@ spring:
           batch_size: 50
     show-sql: false
 
-#Actuator
 management:
   server:
     port: 8080
