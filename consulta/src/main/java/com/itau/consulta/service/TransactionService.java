@@ -2,10 +2,10 @@ package com.itau.consulta.service;
 
 import com.itau.consulta.dto.TransactionResponseDTO;
 import com.itau.consulta.entity.TransactionEntity;
-import com.itau.consulta.enums.TransactionFlow;
 import com.itau.consulta.exceptions.TransactionNotFoundException;
 import com.itau.consulta.exceptions.TransactionSystemUnavailableException;
 import com.itau.consulta.repository.TransactionRepository;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,12 +23,13 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final MetricsService metricsService;
 
+    @Retry(name = "transactionServiceRetry", fallbackMethod = "fallbackGetTransactions")
     public List<TransactionResponseDTO> getTransactions(UUID accountId, boolean lastTransaction) {
-        if(lastTransaction) return getLastTransaction(accountId, TransactionFlow.LAST_TRANSACTION);
-        return getAllTransactions(accountId, TransactionFlow.ALL_TRANSACTIONS);
+        if(lastTransaction) return getLastTransaction(accountId);
+        return getAllTransactions(accountId);
     }
 
-    private List<TransactionResponseDTO> getAllTransactions(UUID accountId, TransactionFlow allTransactions) {
+    private List<TransactionResponseDTO> getAllTransactions(UUID accountId) {
         log.info("Consultando transações da conta: {}", accountId);
         List<TransactionEntity> entities = transactionRepository.findAllByAccountId(accountId);
         if(isNull(entities) || entities.isEmpty()) {
@@ -40,7 +41,7 @@ public class TransactionService {
         return toListTransactionResponseDTO(entities);
     }
 
-    private List<TransactionResponseDTO> getLastTransaction(UUID accountId, TransactionFlow lastTransaction) {
+    private List<TransactionResponseDTO> getLastTransaction(UUID accountId) {
         log.info("Consultando ultima transação da conta: {}", accountId);
         TransactionEntity entity = transactionRepository.findTopByAccountIdOrderByCreatedAtDesc(accountId);
         if(isNull(entity)) {
@@ -58,10 +59,12 @@ public class TransactionService {
                 .toList();
     }
 
-    public List<TransactionResponseDTO> fallbackGetTransactions(UUID accountId, boolean lastTransaction, TransactionFlow flow, Exception exception) {
-        if(flow.equals(TransactionFlow.LAST_TRANSACTION)) {
+    public List<TransactionResponseDTO> fallbackGetTransactions(UUID accountId, boolean lastTransaction, Exception exception) {
+        if (lastTransaction) {
             metricsService.incrementLastTransactionConsultSystemUnavailable();
-        } else metricsService.incrementAllTransactionsConsultSystemUnavailable();
+        } else {
+            metricsService.incrementAllTransactionsConsultSystemUnavailable();
+        }
         throw new TransactionSystemUnavailableException();
     }
 
