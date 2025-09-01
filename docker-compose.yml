@@ -149,7 +149,7 @@ services:
       postgres_replica:
         condition: service_started
     environment:
-      DB_URL: jdbc:postgresql://postgres_primary:5433/contas
+      DB_URL: jdbc:postgresql://postgres_replica:5432/contas
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
     ports:
