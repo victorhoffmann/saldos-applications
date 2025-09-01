@@ -60,6 +60,9 @@ public class TransactionService {
     }
 
     public List<TransactionResponseDTO> fallbackGetTransactions(UUID accountId, boolean lastTransaction, Exception exception) {
+        if (exception instanceof TransactionNotFoundException) {
+            throw (TransactionNotFoundException) exception;
+        }
         if (lastTransaction) {
             log.error("Falha ao recuperar última transação da conta {}: {}", accountId, exception.getMessage());
             metricsService.incrementLastTransactionConsultSystemUnavailable();
