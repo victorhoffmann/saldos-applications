@@ -52,6 +52,7 @@ public class AccountService {
         if (exception instanceof AccountNotFoundException) {
             throw (AccountNotFoundException) exception;
         }
+        log.error("Falha ao recuperar saldo da conta {}: {}", accountId, exception.getMessage());
         metricsService.incrementAccountConsultSystemUnavailable();
         throw new AccountSystemUnavailableException();
     }

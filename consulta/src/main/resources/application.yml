@@ -6,9 +6,6 @@ spring:
     name: consulta
 
   datasource:
-    #url: jdbc:postgresql://localhost:5433/contas //PASSAR A VARIAVEL PARA O COMPOSE
-    #username: postgres //PASSAR A VARIAVEL PARA O COMPOSE
-    #password: postgres //PASSAR A VARIAVEL PARA O COMPOSE
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}

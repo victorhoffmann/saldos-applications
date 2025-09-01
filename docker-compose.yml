@@ -106,6 +106,56 @@ services:
     volumes:
       - ./db/replica-entrypoint.sh:/docker-entrypoint-initdb.d/replica-entrypoint.sh
 
+  # INGESTÃO APP
+  ingestao-app:
+    build:
+      context: ./ingestao
+      dockerfile: Dockerfile
+    container_name: ingestao-app
+    depends_on:
+      localstack:
+        condition: service_healthy
+      message-generator:
+        condition: service_started
+      postgres_primary:
+        condition: service_healthy
+      postgres_replica:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://postgres_primary:5432/contas
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SQS_ENDPOINT: http://localstack:4566
+      SQS_QUEUE_URL: http://localstack:4566/000000000000/transacoes-financeiras-processadas
+      SQS_MAX_MESSAGES: 10
+      SQS_WAIT_TIME_SECONDS: 30
+    ports:
+      - "8080:8080"
+    restart: always
+
+  # CONSULTA APP
+  consulta-app:
+    build:
+      context: ./consulta
+      dockerfile: Dockerfile
+    container_name: consulta-app
+    depends_on:
+      localstack:
+        condition: service_healthy
+      message-generator:
+        condition: service_started
+      postgres_primary:
+        condition: service_healthy
+      postgres_replica:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://postgres_primary:5433/contas
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8080:8080"
+    restart: always
+
 volumes:
   pg_primary_data:
   pg_replica_data:

@@ -49,16 +49,19 @@ public class TransactionEntity {
     private Instant createdAt;
 
     public static TransactionEntity fromDTO(TransactionEventDTO event) {
-        long timestampsMicroseconds = event.getTransaction().getTimestamp();
-        Instant createdAt = Instant.ofEpochSecond(timestampsMicroseconds / 1_000_000, (timestampsMicroseconds % 1_000_000) * 1000);
+        long timestampsMicroseconds = event.transaction().timestamp();
+        Instant createdAt = Instant.ofEpochSecond(
+                timestampsMicroseconds / 1_000_000,
+                (timestampsMicroseconds % 1_000_000) * 1000
+        );
 
         return TransactionEntity.builder()
-                .id(UUID.fromString(event.getTransaction().getId()))
-                .accountId(UUID.fromString(event.getAccount().getId()))
-                .type(event.getTransaction().getType())
-                .amount(BigDecimal.valueOf(event.getTransaction().getAmount()))
-                .currency(event.getTransaction().getCurrency())
-                .status(event.getTransaction().getStatus())
+                .id(UUID.fromString(event.transaction().id()))
+                .accountId(UUID.fromString(event.account().id()))
+                .type(event.transaction().type())
+                .amount(BigDecimal.valueOf(event.transaction().amount()))
+                .currency(event.transaction().currency())
+                .status(event.transaction().status())
                 .timestampOriginal(timestampsMicroseconds)
                 .createdAt(createdAt)
                 .build();

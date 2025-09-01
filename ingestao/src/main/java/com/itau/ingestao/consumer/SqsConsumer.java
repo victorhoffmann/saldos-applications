@@ -6,6 +6,7 @@ import com.itau.ingestao.dto.TransactionEventDTO;
 import com.itau.ingestao.service.AccountService;
 import com.itau.ingestao.service.MetricsService;
 import com.itau.ingestao.service.TransactionService;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,11 @@ import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,53 +40,82 @@ public class SqsConsumer {
     @Value("${aws.sqs.queue-url}")
     private String queueUrl;
 
-    @Scheduled(fixedDelay = 5000)
-    public void consumeMessages() {
-        var messages = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(queueUrl)
-                .maxNumberOfMessages(10)
-                .build()
-        ).messages();
+    @Value("${aws.sqs.max-messages}")
+    private Integer maxNumberMessages;
 
-        for (var msg : messages) {
+    @Value("${aws.sqs.wait-time}")
+    private Integer waitTime;
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(10);
+
+    @PostConstruct
+    public void startConsumeSQS() {
+        pollSqs();
+    }
+
+    private void pollSqs() {
+        CompletableFuture.runAsync(() -> {
             try {
+                var receiveRequest = ReceiveMessageRequest.builder()
+                        .queueUrl(queueUrl)
+                        .maxNumberOfMessages(maxNumberMessages)
+                        .waitTimeSeconds(waitTime)
+                        .build();
 
-                var event = objectMapper.readValue(msg.body(), TransactionEventDTO.class);
+                List<Message> messages = sqsClient.receiveMessage(receiveRequest).messages();
 
-                Set<ConstraintViolation<TransactionEventDTO>> violations = validator.validate(event);
-                if (!violations.isEmpty()) {
-                    log.error("Mensagem inválida: {}", violations);
-                    metricsService.incrementInvalid();
-                    deleteMessage(msg);
-                    continue;
+                if (!messages.isEmpty()) {
+                    messages.forEach(msg -> executor.submit(() -> processMessage(msg)));
                 }
 
-                if (transactionService.existsTransaction(event.getTransaction().getId())) {
-                    log.info("Transação já processada: {}", event.getTransaction().getId());
-                    metricsService.incrementDuplicate();
-                    deleteMessage(msg);
-                    continue;
-                }
+            } catch (Exception e) {
+                log.error("Erro no polling do SQS: {}", e.getMessage(), e);
+            } finally {
+                pollSqs();
+            }
+        });
+    }
 
-                accountService.createAccountIfNotExists(event);
-                accountService.updateBalance(event);
+    private void processMessage(Message msg) {
 
-                transactionService.insert(event);
+        try {
+            var event = objectMapper.readValue(msg.body(), TransactionEventDTO.class);
+            log.info("Processando transação: {}", event.transaction().id());
 
-                log.info("Transação processada com sucesso: {}", event.getTransaction().getId());
-                metricsService.incrementProcessed();
-                deleteMessage(msg);
-
-            } catch (JsonProcessingException jsonException) {
-                log.error("Erro ao desserializar mensagem: {}", jsonException.getLocalizedMessage());
+            Set<ConstraintViolation<TransactionEventDTO>> violations = validator.validate(event);
+            if (!violations.isEmpty()) {
+                log.error("Mensagem inválida: {}", violations);
                 metricsService.incrementInvalid();
                 deleteMessage(msg);
-
-            } catch (Exception exception) {
-                log.error("Erro ao processar mensagem: {}", exception.getMessage());
-                metricsService.incrementError();
-                // Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
+                return;
             }
+
+            if (transactionService.existsTransaction(event.transaction().id())) {
+                log.info("Transação já processada: {}", event.transaction().id());
+                metricsService.incrementDuplicate();
+                deleteMessage(msg);
+                return;
+            }
+
+            accountService.createAccountIfNotExists(event);
+            accountService.updateBalance(event);
+
+            transactionService.insert(event);
+
+            log.info("Transação processada com sucesso: {}", event.transaction().id());
+            metricsService.incrementProcessed();
+            deleteMessage(msg);
+
+        } catch (JsonProcessingException jsonException) {
+            log.error("Erro ao desserializar mensagem: {}", jsonException.getLocalizedMessage());
+            metricsService.incrementInvalid();
+            deleteMessage(msg);
+
+        } catch (Exception exception) {
+            log.error("Erro ao processar mensagem: {}", exception.getMessage());
+            metricsService.incrementError();
+
+            // Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
         }
     }
 

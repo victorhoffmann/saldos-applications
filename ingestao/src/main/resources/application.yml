@@ -6,21 +6,28 @@ spring:
     name: ingestao
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/contas
-    username: postgres
-    password: postgres
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         jdbc:
-          batch_size: 50
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
     show-sql: false
 
-#Actuator
 management:
   server:
     port: 8081
@@ -35,9 +42,30 @@ management:
       prometheus:
         enabled: true
 
+resilience4j:
+  retry:
+    configs:
+      default:
+        maxAttempts: 4
+        waitDuration: 500ms
+        intervalFunction:
+          type: exponential
+          multiplier: 2
+          randomizationFactor: 0.5
+        retryExceptions:
+          - org.springframework.dao.DataAccessException
+          - java.net.ConnectException
+    instances:
+      accountServiceRetry:
+        baseConfig: default
+      transactionServiceRetry:
+        baseConfig: default
+
 # Config AWS SDK / SQS (Localstack)
 aws:
   region: sa-east-1
   sqs:
-    endpoint: http://localhost:4566
-    queue-url: http://localhost:4566/000000000000/transacoes-financeiras-processadas
+    endpoint: ${SQS_ENDPOINT}
+    queue-url: ${SQS_QUEUE_URL}
+    max-messages: ${SQS_MAX_MESSAGES}
+    wait-time: ${SQS_WAIT_TIME_SECONDS}
