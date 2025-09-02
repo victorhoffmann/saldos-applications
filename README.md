@@ -87,6 +87,7 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
   ```
 - Por fim, após o processamento com sucesso, logo que a transação foi processada com sucesso, incremento a métrica e faço o acknowledgement.acknowledge();
 #### Não fiz por conta do tempo, mas:
+  - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
 
@@ -189,6 +190,7 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
     - java.net.ConnectException
   ```
 #### Não fiz por conta do tempo, mas:
+  - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar uma paginação na consulta de transações (Sei que não foi pedido a consulta de transações no desafio)
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
 
