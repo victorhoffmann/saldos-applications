@@ -19,6 +19,7 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 
 ## Ingestão
 
+- No entrypoint.sh acrescentei um wait para verificar se a fila já foi criada antes de iniciar a aplicação.
 - Nos DTOs do projeto, optei por record para garantir imutabilidade, não precisei criar getter, setter, etc e nem utilizar o lombok, assim mantendo o código limpo e conciso, sem perder integração com validações.
 - Utilizei o @Bean do jakarta para validações como: NotNull, NotBlank, DecimalMin, Size, Valid.
 - Como não tenho regras de negócio, optei por não utilizar muitas camadas. Se o projeto crescer (+regras de negócio, +integrações), então sim adicionaria mais camadas/padrões.
