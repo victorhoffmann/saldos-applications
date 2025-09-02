@@ -218,7 +218,7 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 - No terminal Executar o comando "docker-compose up -d"
 - Os serviços devem subir em seguida:
   - A consulta-app depende do banco replica "healthy" para subir
-  - A ingestão-app depende do banco primary "healthy" e a fila sqs criada para subir (então você deve ver alguns logs de "Fila ainda não disponível, aguardando 5s...")
+  - A ingestão-app depende do banco primary "healthy" para subir
 - **Dica:** Você pode diminuir a quantidade de mensagens na fila e o número de contas nas configs do docker-compose:
   - TOTAL_TRANSACTIONS=300000
   - TOTAL_ACCOUNTS=10000
