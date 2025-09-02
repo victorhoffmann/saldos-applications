@@ -1,0 +1,96 @@
+{
+	"info": {
+		"_postman_id": "cef78124-ae1e-482b-b505-3fb564f95ff8",
+		"name": "saldos-applications",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13457510"
+	},
+	"item": [
+		{
+			"name": "CONSULTA SALDO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/accounts/:id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"accounts",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "f5719012-48c5-422d-b53d-ba2348b77304"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CONSULTA TRANSACOES",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/accounts/:id/transactions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"accounts",
+						":id",
+						"transactions"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "f5719012-48c5-422d-b53d-ba2348b77304"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CONSULTA ULTIMA TRANSACAO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/accounts/:id/transactions?last_transaction=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"accounts",
+						":id",
+						"transactions"
+					],
+					"query": [
+						{
+							"key": "last_transaction",
+							"value": "true"
+						}
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "f5719012-48c5-422d-b53d-ba2348b77304"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -43,10 +43,10 @@ public class AccountService {
         );
 
         if (result == 1) {
-            log.info("Saldo do cliente atualizado: {}, transação: {}", event.account().owner(), event.transaction().id());
+            log.info("Saldo da conta atualizado: {}, transação: {}", event.account().id(), event.transaction().id());
             metricsService.incrementAccountBalanceUpdate();
         } else {
-            log.info("Evento antigo saldo do cliente não foi atualizado: {}, transação: {}", event.account().owner(), event.transaction().id());
+            log.info("Mensagem antiga saldo da conta não foi atualizado: {}, transação: {}", event.account().id(), event.transaction().id());
             metricsService.incrementAccountBalanceNotUpdate();
         }
     }

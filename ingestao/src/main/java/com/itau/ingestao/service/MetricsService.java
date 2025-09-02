@@ -16,6 +16,8 @@ public class MetricsService {
     private final Counter messagesAccountBalanceUpdateCounter;
     private final Counter messagesAccountBalanceNotUpdateCounter;
     private final Counter messagesAccountBalanceSystemUnavailableCounter;
+    private final Counter messagesTransactionExistsSystemUnavailableCounter;
+    private final Counter messagesTransactionInsertCounter;
 
     public MetricsService(MeterRegistry meterRegistry) {
         this.messagesProcessedCounter = Counter.builder("sqs.messages.processed")
@@ -53,6 +55,14 @@ public class MetricsService {
         this.messagesAccountBalanceSystemUnavailableCounter = Counter.builder("account.balance.system_unavailable")
                 .description("Número de falhas sistemicas ao atualizar saldo")
                 .register(meterRegistry);
+
+        this.messagesTransactionExistsSystemUnavailableCounter = Counter.builder("transaction.exists.system_unavailable")
+                .description("Número de falhas sistemicas ao consultar transação")
+                .register(meterRegistry);
+
+        this.messagesTransactionInsertCounter = Counter.builder("transaction.insert.system_unavailable")
+                .description("Número de falhas sistemicas ao salvar transação")
+                .register(meterRegistry);
     }
 
     public void incrementProcessed() {
@@ -86,4 +96,8 @@ public class MetricsService {
     }
 
     public void incrementAccountBalanceSystemUnavailable() { messagesAccountBalanceSystemUnavailableCounter.increment(); }
+
+    public void incrementTransactionExistsSystemUnavailable() { messagesTransactionExistsSystemUnavailableCounter.increment(); }
+
+    public void incrementTransactionInsertSystemUnavailable() { messagesTransactionInsertCounter.increment(); }
 }

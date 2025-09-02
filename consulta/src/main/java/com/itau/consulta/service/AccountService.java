@@ -42,7 +42,7 @@ public class AccountService {
                     );
                 })
                 .orElseThrow(() -> {
-                    log.error("Conta não encontrada: {}", accountId);
+                    log.info("Conta não encontrada: {}", accountId);
                     metricsService.incrementAccountConsultNotFound();
                     return new AccountNotFoundException();
                 });

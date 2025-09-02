@@ -39,4 +39,11 @@ done
 
 # Inicia a aplicação Java
 echo "Iniciando ingestao-app..."
-exec java -jar app.jar
+exec java \
+  -Xms2048m -Xmx4096m \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=100 \
+  -XX:InitiatingHeapOccupancyPercent=45 \
+  -XX:MaxMetaspaceSize=512m \
+  -XX:+ParallelRefProcEnabled \
+  -jar app.jar

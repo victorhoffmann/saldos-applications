@@ -39,7 +39,7 @@ public class SqsConsumer {
     public void consumeMessages(@Payload String message, Acknowledgement acknowledgement) {
         try {
             var event = objectMapper.readValue(message, TransactionEventDTO.class);
-            log.info("Processando transação: {}", event.transaction().id());
+            log.info("Processando transação: {}, da conta: {}", event.transaction().id(), event.account().id());
 
             Set<ConstraintViolation<TransactionEventDTO>> violations = validator.validate(event);
             if (!violations.isEmpty()) {
@@ -61,7 +61,7 @@ public class SqsConsumer {
 
             transactionService.insert(event);
 
-            log.info("Transação processada com sucesso: {}", event.transaction().id());
+            log.info("Transação processada com sucesso: {}, da conta: {}", event.transaction().id(), event.account().id());
             metricsService.incrementProcessed();
             acknowledgement.acknowledge();
 
@@ -73,6 +73,8 @@ public class SqsConsumer {
         } catch (Exception exception) {
             log.error("Erro ao processar mensagem: {}", exception.getMessage());
             metricsService.incrementError();
+
+            // Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
         }
     }
 }

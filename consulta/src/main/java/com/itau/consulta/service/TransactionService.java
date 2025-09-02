@@ -33,6 +33,7 @@ public class TransactionService {
         log.info("Consultando transações da conta: {}", accountId);
         List<TransactionEntity> entities = transactionRepository.findAllByAccountId(accountId);
         if(isNull(entities) || entities.isEmpty()) {
+            log.info("Transações não encontradas para conta: {}", accountId);
             metricsService.incrementAllTransactionsConsultNotFound();
             throw new TransactionNotFoundException();
         }
@@ -45,6 +46,7 @@ public class TransactionService {
         log.info("Consultando ultima transação da conta: {}", accountId);
         TransactionEntity entity = transactionRepository.findTopByAccountIdOrderByCreatedAtDesc(accountId);
         if(isNull(entity)) {
+            log.info("Transação não encontrada para conta: {}", accountId);
             metricsService.incrementLastTransactionConsultNotFound();
             throw new TransactionNotFoundException();
         }
