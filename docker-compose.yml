@@ -129,10 +129,12 @@ services:
       AWS_SECRET_KEY: test
       SQS_ENDPOINT: http://localstack:4566
       QUEUE_NAME: transacoes-financeiras-processadas
+      SQS_CONCURRENCY:  10
       SQS_MAX_MESSAGES: 10
-      SQS_WAIT_TIME_SECONDS: 30
+      SQS_WAIT_TIME: 30
+      SQS_VISIBILITY_TIMEOUT: 60
     ports:
-      - "8082:8082"
+      - "8081:8081"
     restart: always
 
   # CONSULTA APP

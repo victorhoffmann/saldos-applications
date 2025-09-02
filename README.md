@@ -18,3 +18,5 @@ Consegui ativar a replicação (repo que me salvou: https://github.com/eremeykin
 Dentro do TransactionEventDTO utilizei o @Bean do jakarta para validações como: NotNull, NotBlank, DecimalMin, Size, Valid.
 
 Como não tenho regras de negócio, optei por não utilizar muitas camadas. Se o projeto crescer (regras de negócio, integrações, testes mais complexos), então sim adicionaria mais camadas/padrões. 
+
+Estou utilizando o SQS Listener para consumir as mensagens da fila com 10 concurrency, 10 messages por poll, 30 segundos de wait time e acknowledgement manual.

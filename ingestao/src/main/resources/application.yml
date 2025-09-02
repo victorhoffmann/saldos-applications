@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8081
 
 spring:
   application:
@@ -72,6 +72,7 @@ aws:
     endpoint: ${SQS_ENDPOINT}
     queue-name: ${QUEUE_NAME}
     listener:
-      concurrency: 10
-      max-number-of-messages: 10
-      wait-time-seconds: 30
+      concurrency: ${SQS_CONCURRENCY}
+      max-number-of-messages: ${SQS_MAX_MESSAGES}
+      wait-time-seconds: ${SQS_WAIT_TIME}
+      visibility-timeout-seconds: ${SQS_VISIBILITY_TIMEOUT}

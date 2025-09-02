@@ -18,7 +18,7 @@ RUN apt-get update && \
     rm -rf awscliv2.zip aws
 
 COPY --from=build /app/target/ingestao-app.jar app.jar
-EXPOSE 8082
+EXPOSE 8081
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

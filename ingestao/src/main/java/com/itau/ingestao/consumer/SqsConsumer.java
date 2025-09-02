@@ -33,9 +33,10 @@ public class SqsConsumer {
             maxConcurrentMessages = "${aws.sqs.listener.concurrency}",
             maxMessagesPerPoll = "${aws.sqs.listener.max-number-of-messages}",
             pollTimeoutSeconds = "${aws.sqs.listener.wait-time-seconds}",
+            messageVisibilitySeconds = "${aws.sqs.listener.visibility-timeout-seconds}",
             acknowledgementMode = "MANUAL"
     )
-    public void listen(@Payload String message, Acknowledgement acknowledgement) {
+    public void consumeMessages(@Payload String message, Acknowledgement acknowledgement) {
         try {
             var event = objectMapper.readValue(message, TransactionEventDTO.class);
             log.info("Processando transação: {}", event.transaction().id());
@@ -67,6 +68,7 @@ public class SqsConsumer {
         } catch (JsonProcessingException jsonException) {
             log.error("Erro ao desserializar mensagem: {}", jsonException.getLocalizedMessage());
             metricsService.incrementInvalid();
+            acknowledgement.acknowledge();
 
         } catch (Exception exception) {
             log.error("Erro ao processar mensagem: {}", exception.getMessage());
