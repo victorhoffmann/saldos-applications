@@ -4,11 +4,23 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 
 ## Sumário
 
+- [Diagrama de arquitetura](#diagrama)
 - [Banco de dados](#banco-de-dados)
 - [Ingestão](#ingestão)
 - [Consulta](#consulta)
 - [Instruções para executar](#instruções-para-executar)
 - [Monitoração](#monitoramento)
+
+## Diagrama
+
+### O que seria necessário para deploy dessa aplicação?
+
+![Diagrama Banco de Dados](./docs/db/img/diagrama-db.drawio.png)
+![Diagrama Consulta](./docs/consulta/img/diagrama-consulta.drawio.png)
+![Diagrama Ingestao](./docs/ingestao/img/diagrama-ingestao.drawio.png)
+
+### Estratégia de Deploy
+
 
 ## Banco de dados
 
@@ -89,9 +101,10 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 #### Não fiz por conta do tempo, mas:
   - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
+  - Implementar melhor o retry na integração com o banco de dados
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
-  - Criar os testes restantes do fallback do AccountService e TransactionService para buscar coveragem mais próximo de 100%
-  ![Coverage Ingestao](./testes/ingestao/img/coverage-ingestao.png)
+  - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar coveragem mais próximo de 100%
+  ![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png)
 
 ## Consulta
 
@@ -194,11 +207,22 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 #### Não fiz por conta do tempo, mas:
   - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar uma paginação na consulta de transações (Sei que não foi pedido a consulta de transações no desafio)
+  - Implementar melhor o retry na integração com o banco de dados
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
+  - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar coveragem mais próximo de 100%
+  ![Coverage Consulta](./docs/consulta/img/coverage-consulta.png)
 
 ## Instruções para executar
 - Será necessário ter instalado o Docker e o Docker Compose para executar
-- Executar o comando "docker-compose up -d"
+- Clonar o repositório e acessar, utilize o comando: git clone https://github.com/victorhoffmann/saldos-applications.git && cd saldos-applications
+- No terminal Executar o comando "docker-compose up -d"
+- Os serviços devem subir em seguida:
+  - A consulta-app depende do banco replica "healthy" para subir
+  - A ingestão-app depende do banco primary "healthy" e a fila sqs criada para subir (então você deve ver alguns logs de "Fila ainda não disponível, aguardando 5s...")
+- **Dica:** Você pode diminuir a quantidade de mensagens na fila e o número de contas nas configs do docker-compose:
+  - TOTAL_TRANSACTIONS=300000
+  - TOTAL_ACCOUNTS=10000
+  - **Dica:** Caso queira realizar a alteração, lembre-se de rodar o comando "docker-compose down -v" para derrubar os serviços e apagar os volumes, excluir a imagem do "golang" e depois executar novamente o docker-compose up -d
 
 ### Como acessar as aplicações
 #### Endpoints principais
@@ -208,6 +232,7 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 - Consulta ultima transação: GET http://localhost:8080/accounts/{id}/transactions?last_transaction=true
 
 **Dica:** Uma collection pronta do Postman está disponível na pasta `/collection` do projeto para facilitar os testes dos endpoints.
+**Só ajustar o id da consulta, pegando um id valido que logar no docker.** 
 
 ## Monitoramento
 

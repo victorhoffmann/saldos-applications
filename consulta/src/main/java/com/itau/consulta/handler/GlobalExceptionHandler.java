@@ -1,5 +1,6 @@
 package com.itau.consulta.handler;
 
+import com.itau.consulta.dto.ErrorResponse;
 import com.itau.consulta.exceptions.AccountNotFoundException;
 import com.itau.consulta.exceptions.AccountSystemUnavailableException;
 import com.itau.consulta.exceptions.TransactionNotFoundException;
@@ -17,12 +18,6 @@ import java.util.UUID;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-
-    public record ErrorResponse(
-            String message,
-            OffsetDateTime timestamp,
-            String path
-    ) {}
 
     private static OffsetDateTime nowSaoPaulo() {
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of("America/Sao_Paulo"));
@@ -103,14 +98,7 @@ public class GlobalExceptionHandler {
                             request.getRequestURI()
                     ));
         }
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(
-                        "Erro de tipo inesperado ao processar a requisição",
-                        nowSaoPaulo(),
-                        request.getRequestURI()
-                ));
+        throw exception;
     }
 
     @ExceptionHandler(Exception.class)

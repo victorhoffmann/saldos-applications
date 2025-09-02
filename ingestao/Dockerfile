@@ -20,7 +20,10 @@ RUN apt-get update && \
 COPY --from=build /app/target/ingestao-app.jar app.jar
 EXPOSE 8081
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["java", \
+  "-Xms2048m", "-Xmx4096m", \
+  "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", \
+  "-XX:InitiatingHeapOccupancyPercent=45", \
+  "-XX:MaxMetaspaceSize=512m", \
+  "-XX:+ParallelRefProcEnabled", \
+  "-jar", "app.jar"]

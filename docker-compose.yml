@@ -151,7 +151,7 @@ services:
       postgres_primary:
         condition: service_healthy
       postgres_replica:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:postgresql://postgres_replica:5432/contas
       DB_USERNAME: postgres

@@ -8,9 +8,8 @@ FROM eclipse-temurin:21-jdk
 WORKDIR /app
 COPY --from=build /app/target/consulta-app.jar app.jar
 EXPOSE 8080
-# ENTRYPOINT ["java", \
-#   "-Xms512m", "-Xmx1024m", \
-#   "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=200", \
-#   "-XX:MaxMetaspaceSize=256m", \
-#   "-jar", "app.jar"]
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+  "-Xms512m", "-Xmx1024m", \
+  "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=200", \
+  "-XX:MaxMetaspaceSize=256m", \
+  "-jar", "app.jar"]
