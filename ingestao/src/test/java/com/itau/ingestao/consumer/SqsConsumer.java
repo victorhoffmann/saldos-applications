@@ -17,11 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.net.ConnectException;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;

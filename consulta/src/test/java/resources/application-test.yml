@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+  application:
+    name: consulta
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    export:
+      metrics:
+        enabled: true
+      prometheus:
+        enabled: true
+  health:
+    db:
+      enabled: true
+
+resilience4j:
+  retry:
+    configs:
+      default:
+        maxAttempts: 4
+        waitDuration: 500ms
+        intervalFunction:
+          type: exponential
+          multiplier: 2
+          randomizationFactor: 0.5
+        retryExceptions:
+          - org.springframework.dao.DataAccessException
+          - java.net.ConnectException
+    instances:
+      accountServiceRetry:
+        baseConfig: default
+        ignoreExceptions:
+          - com.itau.consulta.exceptions.AccountNotFoundException
+      transactionServiceRetry:
+        baseConfig: default
+        ignoreExceptions:
+          - com.itau.consulta.exceptions.TransactionNotFoundException
