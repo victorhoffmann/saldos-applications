@@ -1,0 +1,59 @@
+server:
+  port: 8081
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+  application:
+    name: ingestao
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    export:
+      metrics:
+        enabled: true
+      prometheus:
+        enabled: true
+  health:
+    db:
+      enabled: true
+
+resilience4j:
+  retry:
+    configs:
+      default:
+        maxAttempts: 4
+        waitDuration: 500ms
+        intervalFunction:
+          type: exponential
+          multiplier: 2
+          randomizationFactor: 0.5
+        retryExceptions:
+          - org.springframework.dao.DataAccessException
+          - java.net.ConnectException
+    instances:
+      accountServiceRetry:
+        baseConfig: default
+      transactionServiceRetry:
+        baseConfig: default
+
+# Config AWS SDK / SQS (Localstack)
+aws:
+  region: sa-east-1
+  credentials:
+    access-key: test
+    secret-key: test
+  sqs:
+    endpoint: http://localhost:4566
+    queue-name: transacoes-financeiras-processadas
+    listener:
+      concurrency: 1
+      max-number-of-messages: 1
+      wait-time-seconds: 30
+      visibility-timeout-seconds: 60
