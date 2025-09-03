@@ -152,7 +152,7 @@ Etapas do processo:
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
   - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar cobertura mais próxima de 100%. 
     - **Observação:** Na aplicação de ingestão, não consegui avançar nos testes de integração do consumo da fila devido à limitação do SQSListener, pois a aplicação depende do Localstack rodando para consumir mensagens. Sem o Localstack ativo, os testes sempre acusam erro, dificultando a automação completa dos testes de integração desse fluxo.
-![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png)
+![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png) 
 
 ## Consulta
 
@@ -257,7 +257,7 @@ Etapas do processo:
   - Testes de retry/fallback precisei utilizar o mock no repository para forçar o erro (Fiz uma classe isolada para testar)
   - 3 testes do ControllerAdvice precisei fazer o mesmo processo de mock para forçar o erro (Fiz classe isolada para testar)
 - Com isso, além de garantir boa cobertura de código, também assegurei que os principais fluxos da aplicação funcionam de ponta a ponta.
-![Coverage Consulta](./docs/consulta/img/coverage-consulta.png)
+![Coverage Consulta](./docs/consulta/img/coverage-consulta.png) 
 #### Não fiz por conta do tempo, mas:
   - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar uma paginação na consulta de transações (Sei que não foi pedido a consulta de transações no desafio)
