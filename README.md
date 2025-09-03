@@ -37,11 +37,17 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 
 ## Monitoramento
 
-- Ingestão - Health check: http://localhost:8081/actuator/health
-- Ingestão - Prometheus: http://localhost:8081/actuator/prometheus
-- Consulta - Health check: http://localhost:8080/actuator/health
-- Consulta - Prometheus: http://localhost:8080/actuator/prometheus
+Utilizei o Actuator para não aumentar a complexidade no momento de gerar métricas. Os principais endpoints de monitoramento disponíveis são:
 
+**Ingestão**
+- **Health check:** [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health) — Verifica o status de saúde da aplicação.
+- **Prometheus:** [http://localhost:8081/actuator/prometheus](http://localhost:8081/actuator/prometheus) — Exposição das métricas para o Prometheus.
+- **Metrics:** [http://localhost:8081/actuator/metrics](http://localhost:8081/actuator/metrics) — Lista todas as métricas disponíveis.
+
+**Consulta**
+- **Health check:** [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+- **Prometheus:** [http://localhost:8080/actuator/prometheus](http://localhost:8080/actuator/prometheus)
+- **Metrics:** [http://localhost:8080/actuator/metrics](http://localhost:8080/actuator/metrics)
 ## Diagrama
 
 ### O que seria necessário para deploy dessa aplicação?
@@ -170,6 +176,14 @@ Etapas do processo:
 - Como não tenho regras de negócio, optei por não utilizar muitas camadas. Se o projeto crescer (+regras de negócio, +integrações), então sim adicionaria mais camadas/padrões.
 - Utilizei o Actuator + Prometheus para métricas: http://localhost:8080/actuator/prometheus
 - Ao consultar o saldo da conta:
+  - Se ao consultar a conta, o parâmetro de id não for um UUID válido então retorna 400:
+  ```json
+    {
+        "message": "ID informado não é um UUID válido",
+        "timestamp": "2025-09-02T00:09:15.19-03:00",
+        "path": "/accounts/aaaaaaaaaaa"
+    }
+  ```
   - Se a conta não existir na base de dados, incrementa métrica, loga que a conta não foi encontrada e retorna 404:
   ```json
     {
@@ -196,6 +210,22 @@ Etapas do processo:
     - java.net.ConnectException
   ```
 - Ao consultar o transações da conta:
+  - Se ao consultar a(s) transação(ões) da conta, o parâmetro de id não for um UUID válido então retorna 400:
+  ```json
+    {
+        "message": "ID informado não é um UUID válido",
+        "timestamp": "2025-09-02T00:09:15.19-03:00",
+        "path": "/accounts/aaaaaaaaaaa/transactions"
+    }
+  ```
+  - Se ao consultar a(s) transação(ões) da conta, o parâmetro "last_transaction" não for true ou false então retorna 400:
+  ```json
+    {
+        "message": "Parâmetro 'last_transaction' deve ser true ou false",
+        "timestamp": "2025-09-02T00:09:15.19-03:00",
+        "path": "/accounts/2e5a767e-2d2e-408d-a564-f4222bf47cc3/transactions"
+    }
+  ```
   - Se consultar todas ou apenas a ultima transação da conta e não existir na base, incrementa métrica e loga que a transação não foi encontrada e retorna 404:
   ```json
     {
