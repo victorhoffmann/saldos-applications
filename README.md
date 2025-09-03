@@ -4,12 +4,41 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 
 ## Sumário
 
+- [Instruções para executar](#instruções-para-executar)
+- [Monitoração](#monitoramento)
 - [Diagrama de arquitetura](#diagrama)
 - [Banco de dados](#banco-de-dados)
 - [Ingestão](#ingestão)
 - [Consulta](#consulta)
-- [Instruções para executar](#instruções-para-executar)
-- [Monitoração](#monitoramento)
+
+## Instruções para executar
+- Será necessário ter instalado o Docker e o Docker Compose para executar
+- Clonar o repositório e acessar, utilize o comando: git clone https://github.com/victorhoffmann/saldos-applications.git && cd saldos-applications
+- No terminal Executar o comando "docker-compose up -d"
+- Os serviços devem subir em seguida:
+  - A consulta-app depende do banco replica "healthy" para subir
+  - A ingestão-app depende do banco primary "healthy" para subir
+- **Dica:** Você pode diminuir a quantidade de mensagens na fila e o número de contas nas configs do docker-compose:
+  - TOTAL_TRANSACTIONS=300000
+  - TOTAL_ACCOUNTS=10000
+  - **Dica:** Caso queira realizar a alteração, lembre-se de rodar o comando "docker-compose down -v" para derrubar os serviços e apagar os volumes, excluir a imagem do "golang" e depois executar novamente o docker-compose up -d
+
+### Como acessar as aplicações
+#### Endpoints principais
+
+- Consulta saldo: GET http://localhost:8080/accounts/{id}
+- Consulta transações: GET http://localhost:8080/accounts/{id}/transactions
+- Consulta ultima transação: GET http://localhost:8080/accounts/{id}/transactions?last_transaction=true
+
+**Dica:** Uma collection pronta do Postman está disponível na pasta `/collection` do projeto para facilitar os testes dos endpoints.
+**Só ajustar o id da consulta, pegando um id valido que logar no docker.** 
+
+## Monitoramento
+
+- Ingestão - Health check: http://localhost:8081/actuator/health
+- Ingestão - Prometheus: http://localhost:8081/actuator/prometheus
+- Consulta - Health check: http://localhost:8080/actuator/health
+- Consulta - Prometheus: http://localhost:8080/actuator/prometheus
 
 ## Diagrama
 
@@ -233,32 +262,3 @@ Etapas do processo:
   - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar uma paginação na consulta de transações (Sei que não foi pedido a consulta de transações no desafio)
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
-
-## Instruções para executar
-- Será necessário ter instalado o Docker e o Docker Compose para executar
-- Clonar o repositório e acessar, utilize o comando: git clone https://github.com/victorhoffmann/saldos-applications.git && cd saldos-applications
-- No terminal Executar o comando "docker-compose up -d"
-- Os serviços devem subir em seguida:
-  - A consulta-app depende do banco replica "healthy" para subir
-  - A ingestão-app depende do banco primary "healthy" para subir
-- **Dica:** Você pode diminuir a quantidade de mensagens na fila e o número de contas nas configs do docker-compose:
-  - TOTAL_TRANSACTIONS=300000
-  - TOTAL_ACCOUNTS=10000
-  - **Dica:** Caso queira realizar a alteração, lembre-se de rodar o comando "docker-compose down -v" para derrubar os serviços e apagar os volumes, excluir a imagem do "golang" e depois executar novamente o docker-compose up -d
-
-### Como acessar as aplicações
-#### Endpoints principais
-
-- Consulta saldo: GET http://localhost:8080/accounts/{id}
-- Consulta transações: GET http://localhost:8080/accounts/{id}/transactions
-- Consulta ultima transação: GET http://localhost:8080/accounts/{id}/transactions?last_transaction=true
-
-**Dica:** Uma collection pronta do Postman está disponível na pasta `/collection` do projeto para facilitar os testes dos endpoints.
-**Só ajustar o id da consulta, pegando um id valido que logar no docker.** 
-
-## Monitoramento
-
-- Ingestão - Health check: http://localhost:8081/actuator/health
-- Ingestão - Prometheus: http://localhost:8081/actuator/prometheus
-- Consulta - Health check: http://localhost:8080/actuator/health
-- Consulta - Prometheus: http://localhost:8080/actuator/prometheus
