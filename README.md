@@ -148,13 +148,18 @@ Etapas do processo:
     - java.net.ConnectException
   ```
 - Por fim, após o processamento com sucesso, logo que a transação foi processada com sucesso, incremento a métrica e faço o acknowledgement.acknowledge();
+- **Poderia implementar um sistema de lock na tabela para evitar ainda mais a idempotência? Sim, mas pensei no possivel aumento de latência e procurei realizar de outras formas essa redução.**
+  - Consultando se a transação já foi processada para evitar duplicidade
+  - Criação da conta com "ON CONFLICT DO NOTHING" caso a conta existir não criar novamente
+  - Atualização de saldo condicional ao timestamp recebido (se o timestamp for mais recente, então atualiza o saldo)
+  - Sei que o desafio não pedia, mas também criei uma tabela de transações para ter de histórico também
 #### Não fiz por conta do tempo, mas:
   - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
   - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar cobertura mais próxima de 100%. 
     - **Observação:** Na aplicação de ingestão, não consegui avançar nos testes de integração do consumo da fila devido à limitação do SQSListener, pois a aplicação depende do Localstack rodando para consumir mensagens. Sem o Localstack ativo, os testes sempre acusam erro, dificultando a automação completa dos testes de integração desse fluxo.
-![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png) 
+- ![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png) 
 
 ## Consulta
 
@@ -256,7 +261,7 @@ Etapas do processo:
   ```
 - Realizei os testes com as injeções reais de dependências a partir do controller utilizando o MockMvc + H2 em memória,
   garantindo não só testes unitários, mas também testes de integração, validando o comportamento dos endpoints e a integração com a camada de persistência.
-  - Testes de retry/fallback precisei utilizar o mock no repository para forçar o erro (Fiz uma classe isolada para testar)
+  - Testes de retry/fallback precisei utilizar o mock no repository para forçar o erro (Fiz classe isolada para testar)
   - 3 testes do ControllerAdvice precisei fazer o mesmo processo de mock para forçar o erro (Fiz classe isolada para testar)
 - Com isso, além de garantir boa cobertura de código, também assegurei que os principais fluxos da aplicação funcionam de ponta a ponta.
 ![Coverage Consulta](./docs/consulta/img/coverage-consulta.png) 
