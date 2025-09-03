@@ -2,6 +2,16 @@
 
 Este projeto simula um sistema de ingestão e consulta de transações financeiras, utilizando arquitetura de microsserviços, SQS, PostgreSQL com replicação, métricas com Prometheus e Resilience4j para resiliência.
 
+Além disso, optei por duas aplicações separadas, cada uma com sua responsabilidade:
+
+  - A aplicação de ingestão consome as mensagens da fila SQS e realiza operações de criação de contas e atualização de saldos, conectando-se ao Postgres primary para garantir consistência dos dados.
+
+  - A aplicação de consulta é dedicada apenas a fornecer informações aos clientes, conectando-se ao Postgres replica, reduzindo a carga sobre o banco primário e melhorando a performance das leituras.
+
+Essa separação permite manter cada serviço focado em sua função e configurar autoscaling independente: a aplicação de ingestão escala com base na quantidade de mensagens na fila, enquanto a aplicação de consulta escala com base no número de requisições recebidas pelo ALB.
+
+Dessa forma, a arquitetura garante resiliência, consistência e escalabilidade, além de reduzir riscos de impacto entre operações de leitura e escrita.
+
 ## Sumário
 
 - [Instruções para executar](#instruções-para-executar)
