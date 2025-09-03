@@ -13,7 +13,9 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 
 ## Instruções para executar
 - Será necessário ter instalado o Docker e o Docker Compose para executar
-- Clonar o repositório e acessar, utilize o comando: git clone https://github.com/victorhoffmann/saldos-applications.git && cd saldos-applications
+- Clonar o repositório e acessar, utilizando os comandos: 
+  - git clone https://github.com/victorhoffmann/saldos-applications.git
+  - cd saldos-applications
 - No terminal Executar o comando "docker-compose up -d"
 - Os serviços devem subir em seguida:
   - A consulta-app depende do banco replica "healthy" para subir
