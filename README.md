@@ -21,6 +21,25 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 
 ### Estratégia de Deploy
 
+Para mitigar o risco de que um bug impacte todos os clientes, penso na criação de uma pipeline automatizada utilizando o GitHub Actions, implementando etapas de validações, testes e um deploy gradual (Canary).
+
+Etapas do processo:
+
+**1 - Validação do Build:** O código é compilado e verificado quanto a erros de sintaxe e dependências.
+
+**2 - Execução de Testes:** Testes unitários e de integração serão executados para garantir que novas alterações não quebrem as funcionalidades já existentes.
+
+**3 - Verificação de Vulnerabilidades:** Ferramentas de análise de segurança verificam vulnerabilidades em dependências e no código.
+
+**4 - Build do Artefato:** Após todas as etapas de validações, a pipeline gera a imagem Docker da aplicação e a envia para o Amazon ECR (Elastic Container Registry).
+
+**5 - Criação/Alteração do Serviço ECS:** O serviço no ECS Fargate é configurado com múltiplas tasks e auto scaling, garantindo alta disponibilidade.
+
+**6 - Deploy Canary:** A nova versão é liberada gradualmente, inicialmente atendendo apenas uma pequena parte dos clientes.
+
+**7 - Monitoramento:** Durante a implantação, o comportamento da aplicação é monitorado em tempo real. Caso não sejam detectados problemas, o tráfego é aumentado progressivamente até alcançar 100% dos usuários.
+
+**8 - Rollback:** Se algum problema for identificado durante o deploy Canary, é possível interromper o aumento de tráfego e retornar à versão anterior da aplicação, minimizando o impacto para os clientes.
 
 ## Banco de dados
 
@@ -101,10 +120,10 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
 #### Não fiz por conta do tempo, mas:
   - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
-  - Implementar melhor o retry na integração com o banco de dados
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
-  - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar coveragem mais próximo de 100%
-  ![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png)
+  - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar cobertura mais próxima de 100%. 
+    - **Observação:** Na aplicação de ingestão, não consegui avançar nos testes de integração do consumo da fila devido à limitação do SQSListener, pois a aplicação depende do Localstack rodando para consumir mensagens. Sem o Localstack ativo, os testes sempre acusam erro, dificultando a automação completa dos testes de integração desse fluxo.
+![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png)
 
 ## Consulta
 
@@ -204,13 +223,16 @@ Este projeto simula um sistema de ingestão e consulta de transações financeir
     - org.springframework.dao.DataAccessException
     - java.net.ConnectException
   ```
+- Realizei os testes com as injeções reais de dependências a partir do controller utilizando o MockMvc + H2 em memória,
+  garantindo não só testes unitários, mas também testes de integração, validando o comportamento dos endpoints e a integração com a camada de persistência.
+  - Testes de retry/fallback precisei utilizar o mock no repository para forçar o erro (Fiz uma classe isolada para testar)
+  - 3 testes do ControllerAdvice precisei fazer o mesmo processo de mock para forçar o erro (Fiz classe isolada para testar)
+- Com isso, além de garantir boa cobertura de código, também assegurei que os principais fluxos da aplicação funcionam de ponta a ponta.
+![Coverage Consulta](./docs/consulta/img/coverage-consulta.png)
 #### Não fiz por conta do tempo, mas:
   - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
   - Poderia implementar uma paginação na consulta de transações (Sei que não foi pedido a consulta de transações no desafio)
-  - Implementar melhor o retry na integração com o banco de dados
   - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
-  - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar coveragem mais próximo de 100%
-  ![Coverage Consulta](./docs/consulta/img/coverage-consulta.png)
 
 ## Instruções para executar
 - Será necessário ter instalado o Docker e o Docker Compose para executar
