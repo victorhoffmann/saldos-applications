@@ -30,12 +30,13 @@ Dessa forma, a arquitetura garante resiliência, consistência e escalabilidade,
 - Os serviços devem subir em seguida:
   - A consulta-app depende do banco replica "healthy" para subir
   - A ingestão-app depende do banco primary "healthy" para subir
-- **Dica:** Você pode diminuir a quantidade de mensagens na fila e o número de contas nas configs do docker-compose:
+
+**Dica:** Você pode diminuir a quantidade de mensagens na fila e o número de contas nas configs do docker-compose:
   - TOTAL_TRANSACTIONS=300000
   - TOTAL_ACCOUNTS=10000
-  - **Dica:** Caso queira realizar a alteração, lembre-se de rodar o comando "docker-compose down -v" para derrubar os serviços e apagar os volumes, excluir a imagem do "golang" e depois executar novamente o docker-compose up -d
+  - **Caso queira realizar a alteração, lembre-se de rodar o comando "docker-compose down -v" para derrubar os serviços e apagar os volumes, excluir a imagem do "golang" e depois executar novamente o docker-compose up -d** 
 
-### Como acessar as aplicações
+### Como realizar a consulta
 #### Endpoints principais
 
 - Consulta saldo: GET http://localhost:8080/accounts/{id}
@@ -90,26 +91,33 @@ Etapas do processo:
 
 ## Banco de dados
 
-- Optei pelo postgres, pensando na leitura e escrita separada, fiz algumas pesquisas e percebi que ele trabalha muito bem nesse cenário
-- Estava com dificuldade em ativar a replicação, porém pesquisando mais a fundo encontrei um repo que me salvou: https://github.com/eremeykin/pg-primary-replica
-- Aplicação de ingestão utiliza a primary
-- Aplicação de consulta utiliza a replica
+Optei pelo postgres, pensando na leitura e escrita separada, fiz algumas pesquisas e percebi que ele trabalha muito bem nesse cenário
+
+Aplicação de ingestão utiliza a primary
+
+Aplicação de consulta utiliza a replica
+
+Estava com dificuldade em ativar a replicação, porém pesquisando mais a fundo encontrei um repo que me salvou: https://github.com/eremeykin/pg-primary-replica
 
 ## Ingestão
 
-- No entrypoint.sh acrescentei um wait para verificar se a fila já foi criada antes de iniciar a aplicação.
-- Nos DTOs do projeto, optei por record para garantir imutabilidade, não precisei criar getter, setter, etc e nem utilizar o lombok, assim mantendo o código limpo e conciso, sem perder integração com validações.
-- Utilizei o @Bean do jakarta para validações como: NotNull, NotBlank, DecimalMin, Size, Valid.
-- Como não tenho regras de negócio, optei por não utilizar muitas camadas. Se o projeto crescer (+regras de negócio, +integrações), então sim adicionaria mais camadas/padrões.
-- Utilizei o Actuator + Prometheus para métricas: http://localhost:8081/actuator/prometheus
-- Estou utilizando o SQS Listener para consumir as mensagens da fila com:
-  - 10 concurrency
-  - 10 messages por poll
-  - 30 segundos de wait time
-  - 60 segundos de visibility timeout seconds
-  - acknowledgement manual
-- Realizo validações com o Validator do jakarta também para verificar se os campos do DTO de entrada estão conforme o esperado
-  - Se não passar das validações, incrementa na métrica, faz o acknowledgement.acknowledge() e depois loga a mensagem de erro informado em forma de lista, por exemplo:
+Nos DTOs do projeto, optei por record para garantir imutabilidade, não precisei criar getter, setter, etc e nem utilizar o lombok, assim mantendo o código limpo e conciso, sem perder integração com validações.
+
+Utilizei o @Bean do jakarta para validações como: NotNull, NotBlank, DecimalMin, Size, Valid.
+
+Como não tenho regras de negócio, optei por não utilizar muitas camadas. Se o projeto crescer (+regras de negócio, +integrações), então sim adicionaria mais camadas/padrões.
+
+Utilizei o Actuator + Prometheus para métricas: http://localhost:8081/actuator/prometheus
+
+Estou utilizando o SQS Listener para consumir as mensagens da fila com:
+- 10 concurrency
+- 10 messages por poll
+- 30 segundos de wait time
+- 60 segundos de visibility timeout seconds
+- acknowledgement manual
+
+Realizo validações com o Validator do jakarta também para verificar se os campos do DTO de entrada estão conforme o esperado
+- Se não passar das validações, incrementa na métrica, faz o acknowledgement.acknowledge() e depois loga a mensagem de erro informado em forma de lista, por exemplo:
   ```json
     {
         "transaction": {
@@ -147,46 +155,58 @@ Etapas do processo:
         account.balance.amount: must be greater than or equal to 0.00
     ]
     ```
-- Da mesma forma valido se a transação já foi processada no banco de dados.
-  - Se sim, realizo o mesmo processo de incrementar na métrica, faz o acknowledgement.acknowledge() e depois logo o id da transação.
-- Realizo a criação da conta caso ela não exista na base de dados e depois atualizo o saldo.
-  - Apenas realizo a atualização de saldo se a transação em processamento for mais recente que a armazenada no banco de dados
-  - Se não, logo dizendo que o evento é antigo e foi desprezado
-  - Implementei o retry do resilience4j no service, no momento da criação da conta e da atualização de saldo, caso receba uma das duas exceptions do banco de dados/repository
+
+Da mesma forma valido se a transação já foi processada no banco de dados.
+- Se sim, realizo o mesmo processo de incrementar na métrica, faz o acknowledgement.acknowledge() e depois logo o id da transação.
+
+Realizo a criação da conta caso ela não exista na base de dados e depois atualizo o saldo.
+- Apenas realizo a atualização de saldo se a transação em processamento for mais recente que a armazenada no banco de dados
+- Se não, logo dizendo que o evento é antigo e foi desprezado
+
+Implementei o retry do resilience4j no service, no momento da criação da conta e da atualização de saldo, caso receba uma das duas exceptions do banco de dados/repository
   ```
     - org.springframework.dao.DataAccessException
     - java.net.ConnectException
   ```
-- Após o processamento de criação de conta e atualização de saldo, armazeno a transação em uma tabela para controle.
-- Implementei o retry do resilience4j no service, no momento onde ele verifica a existencia da transação e ao salvar a transação, caso receba uma das duas exceptions do banco de dados/repository
+
+Após o processamento de criação de conta e atualização de saldo, armazeno a transação em uma tabela para controle.
+
+Implementei o retry do resilience4j no service, no momento onde ele verifica a existencia da transação e ao salvar a transação, caso receba uma das duas exceptions do banco de dados/repository
   ```
     - org.springframework.dao.DataAccessException
     - java.net.ConnectException
   ```
-- Por fim, após o processamento com sucesso, logo que a transação foi processada com sucesso, incremento a métrica e faço o acknowledgement.acknowledge();
-- **Poderia implementar um sistema de lock na tabela para evitar ainda mais a idempotência? Sim, mas pensei no possivel aumento de latência e procurei realizar de outras formas essa redução.**
-  - Consultando se a transação já foi processada para evitar duplicidade
-  - Criação da conta com "ON CONFLICT DO NOTHING" caso a conta existir não criar novamente
-  - Atualização de saldo condicional ao timestamp recebido (se o timestamp for mais recente, então atualiza o saldo)
-  - Sei que o desafio não pedia, mas também criei uma tabela de transações para ter de histórico também
+
+Por fim, após o processamento com sucesso, logo que a transação foi processada com sucesso, incremento a métrica e faço o acknowledgement.acknowledge();
+
+**Poderia implementar um sistema de lock na tabela para evitar ainda mais a idempotência? Sim, mas pensei no possivel aumento de latência e procurei realizar de outras formas essa redução.**
+- Consultando se a transação já foi processada para evitar duplicidade
+- Criação da conta com "ON CONFLICT DO NOTHING" caso a conta existir não criar novamente
+- Atualização de saldo condicional ao timestamp recebido (se o timestamp for mais recente, então atualiza o saldo)
+- Sei que o desafio não pedia, mas também criei uma tabela de transações para ter de histórico também
 #### Não fiz por conta do tempo, mas:
-  - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
-  - Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
-  - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
-  - Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar cobertura mais próxima de 100%. 
-    - **Observação:** Na aplicação de ingestão, não consegui avançar nos testes de integração do consumo da fila devido à limitação do SQSListener, pois a aplicação depende do Localstack rodando para consumir mensagens. Sem o Localstack ativo, os testes sempre acusam erro, dificultando a automação completa dos testes de integração desse fluxo.
-- ![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png) 
+- Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
+- Poderia implementar um retry com base no número de tentativas e por fim encaminhar para uma fila DLQ
+- Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
+- Criar os testes restantes do retry/fallback do AccountService e TransactionService para buscar cobertura mais próxima de 100%. 
+  - **Observação:** Na aplicação de ingestão, não consegui avançar nos testes de integração do consumo da fila devido à limitação do SQSListener, pois a aplicação depende do Localstack rodando para consumir mensagens. Sem o Localstack ativo, os testes sempre acusam erro, dificultando a automação completa dos testes de integração desse fluxo.
+
+![Coverage Ingestao](./docs/ingestao/img/coverage-ingestao.png) 
 
 ## Consulta
 
-- Criei dois controllers:
-  - AccountController para consultar o saldo da conta a partir do id "/accounts/{id}" com validação no campo de id
-  - TransactionController para consultar as transações da conta a partir do id "/accounts/{id}/transactions" com validação no campo de id e caso queira consultar apenas a ultima a transação passar a query "last_transaction=true"
-- Nos DTOs do projeto, optei por record para garantir imutabilidade, não precisei criar getter, setter, etc e nem utilizar o lombok, assim mantendo o código limpo e conciso, sem perder integração com validações.
-- Como não tenho regras de negócio, optei por não utilizar muitas camadas. Se o projeto crescer (+regras de negócio, +integrações), então sim adicionaria mais camadas/padrões.
-- Utilizei o Actuator + Prometheus para métricas: http://localhost:8080/actuator/prometheus
-- Ao consultar o saldo da conta:
-  - Se ao consultar a conta, o parâmetro de id não for um UUID válido então retorna 400:
+Criei dois controllers:
+- AccountController para consultar o saldo da conta a partir do id "/accounts/{id}" com validação no campo de id
+- TransactionController para consultar as transações da conta a partir do id "/accounts/{id}/transactions" com validação no campo de id e caso queira consultar apenas a ultima a transação passar a query "last_transaction=true"
+
+Nos DTOs do projeto, optei por record para garantir imutabilidade, não precisei criar getter, setter, etc e nem utilizar o lombok, assim mantendo o código limpo e conciso, sem perder integração com validações.
+
+Como não tenho regras de negócio, optei por não utilizar muitas camadas. Se o projeto crescer (+regras de negócio, +integrações), então sim adicionaria mais camadas/padrões.
+
+Utilizei o Actuator + Prometheus para métricas: http://localhost:8080/actuator/prometheus
+
+Ao consultar o saldo da conta:
+- Se ao consultar a conta, o parâmetro de id não for um UUID válido então retorna 400:
   ```json
     {
         "message": "ID informado não é um UUID válido",
@@ -194,7 +214,7 @@ Etapas do processo:
         "path": "/accounts/aaaaaaaaaaa"
     }
   ```
-  - Se a conta não existir na base de dados, incrementa métrica, loga que a conta não foi encontrada e retorna 404:
+- Se a conta não existir na base de dados, incrementa métrica, loga que a conta não foi encontrada e retorna 404:
   ```json
     {
         "message": "Conta não encontrada",
@@ -202,7 +222,8 @@ Etapas do processo:
         "path": "/accounts/f5719012-48c5-422d-b53d-ba2348b77305"
     }
   ```
-  - Se a conta existir na base de dados, incrementa métrica e retorna 200:
+
+- Se a conta existir na base de dados, incrementa métrica e retorna 200:
   ```json
     {
         "id": "f5719012-48c5-422d-b53d-ba2348b77304",
@@ -214,13 +235,15 @@ Etapas do processo:
         "updated_at": "2025-09-01T23:00:08.033-03:00"
     }
   ```
-  - Implementei o retry do resilience4j no service, no momento da criação da conta e da atualização de saldo, caso receba uma das duas exceptions do banco de dados/repository
+
+Implementei o retry do resilience4j no service, no momento da criação da conta e da atualização de saldo, caso receba uma das duas exceptions do banco de dados/repository
   ```
     - org.springframework.dao.DataAccessException
     - java.net.ConnectException
   ```
-- Ao consultar o transações da conta:
-  - Se ao consultar a(s) transação(ões) da conta, o parâmetro de id não for um UUID válido então retorna 400:
+
+Ao consultar o transações da conta:
+- Se ao consultar a(s) transação(ões) da conta, o parâmetro de id não for um UUID válido então retorna 400:
   ```json
     {
         "message": "ID informado não é um UUID válido",
@@ -228,7 +251,8 @@ Etapas do processo:
         "path": "/accounts/aaaaaaaaaaa/transactions"
     }
   ```
-  - Se ao consultar a(s) transação(ões) da conta, o parâmetro "last_transaction" não for true ou false então retorna 400:
+
+- Se ao consultar a(s) transação(ões) da conta, o parâmetro "last_transaction" não for true ou false então retorna 400:
   ```json
     {
         "message": "Parâmetro 'last_transaction' deve ser true ou false",
@@ -236,7 +260,8 @@ Etapas do processo:
         "path": "/accounts/2e5a767e-2d2e-408d-a564-f4222bf47cc3/transactions"
     }
   ```
-  - Se consultar todas ou apenas a ultima transação da conta e não existir na base, incrementa métrica e loga que a transação não foi encontrada e retorna 404:
+
+- Se consultar todas ou apenas a ultima transação da conta e não existir na base, incrementa métrica e loga que a transação não foi encontrada e retorna 404:
   ```json
     {
         "message": "Transação não encontrada",
@@ -244,7 +269,8 @@ Etapas do processo:
         "path": "/accounts/f5719012-48c5-422d-b53d-ba2348b77305/transactions"
     }
   ```
-  - Se consultar a todas as transações da conta e existir na base, incrementa métrica e retorna 200:
+
+- Se consultar a todas as transações da conta e existir na base, incrementa métrica e retorna 200:
   ```json
     [
         {
@@ -279,7 +305,8 @@ Etapas do processo:
         }
     ]
   ```
-  - Se consultar a ultima transação da conta e existir na base, incrementa métrica e retorna 200:
+
+- Se consultar a ultima transação da conta e existir na base, incrementa métrica e retorna 200:
   ```json
     [
         {
@@ -294,18 +321,21 @@ Etapas do processo:
         }
     ]
   ```
-  - Implementei o retry do resilience4j no service, no momento da criação da conta e da atualização de saldo, caso receba uma das duas exceptions do banco de dados/repository
+
+Implementei o retry do resilience4j no service, no momento da criação da conta e da atualização de saldo, caso receba uma das duas exceptions do banco de dados/repository
   ```
     - org.springframework.dao.DataAccessException
     - java.net.ConnectException
   ```
-- Realizei os testes com as injeções reais de dependências a partir do controller utilizando o MockMvc + H2 em memória,
-  garantindo não só testes unitários, mas também testes de integração, validando o comportamento dos endpoints e a integração com a camada de persistência.
-  - Testes de retry/fallback precisei utilizar o mock no repository para forçar o erro (Fiz classe isolada para testar)
-  - 3 testes do ControllerAdvice precisei fazer o mesmo processo de mock para forçar o erro (Fiz classe isolada para testar)
+
+Realizei os testes com as injeções reais de dependências a partir do controller utilizando o MockMvc + H2 em memória, garantindo não só testes unitários, mas também testes de integração, validando o comportamento dos endpoints e a integração com a camada de persistência.
+- Testes de retry/fallback precisei utilizar o mock no repository para forçar o erro (Fiz classe isolada para testar)
+- 3 testes do ControllerAdvice precisei fazer o mesmo processo de mock para forçar o erro (Fiz classe isolada para testar)
 - Com isso, além de garantir boa cobertura de código, também assegurei que os principais fluxos da aplicação funcionam de ponta a ponta.
+
 ![Coverage Consulta](./docs/consulta/img/coverage-consulta.png) 
+
 #### Não fiz por conta do tempo, mas:
-  - Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
-  - Poderia implementar uma paginação na consulta de transações (Sei que não foi pedido a consulta de transações no desafio)
-  - Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
+- Definir melhor e configurar o Java Args no Dockerfile em relação a memoria, GC, entre outras.
+- Poderia implementar uma paginação na consulta de transações (Sei que não foi pedido a consulta de transações no desafio)
+- Poderia implementar o Circuitbreaker para trabalhar em conjunto com os retrys
